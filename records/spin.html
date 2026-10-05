@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HHM record</title>
+  <style>
+    html,body{height:100%;margin:0;padding:0;overflow:hidden;background:#3A64D8;}
+    .wrap{position:absolute;left:50%;top:50%;width:100vmin;height:100vmin;transform:translate(-50%,-50%);}
+    .rec{position:absolute;inset:0;width:100%;height:100%;animation:spin 5s linear infinite;}
+    .sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+      background:conic-gradient(from 300deg,rgba(255,255,255,0) 0deg,rgba(255,255,255,.12) 18deg,rgba(255,255,255,0) 40deg,
+        rgba(255,255,255,0) 180deg,rgba(255,255,255,.08) 198deg,rgba(255,255,255,0) 220deg);
+      -webkit-mask:radial-gradient(circle,transparent 0 23%,#000 24% 100%);mask:radial-gradient(circle,transparent 0 23%,#000 24% 100%);}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @media (prefers-reduced-motion:reduce){.rec{animation:none;}}
+  </style>
+</head>
+<body>
+  <div class="wrap"><img class="rec" id="rec" alt="" /><div class="sheen"></div></div>
+  <script>
+    var p=new URLSearchParams(location.search);
+    var c=(p.get('c')||'CV').replace(/[^A-Z]/g,'').slice(0,2);
+    var v=p.get('v')==='next'?'upnext':'title';
+    var bg=(p.get('bg')||'3A64D8').replace(/[^0-9A-Fa-f]/g,'').slice(0,6);
+    document.body.style.background='#'+bg;
+    document.getElementById('rec').src='record_'+v+'_'+c+'.png?v=1';
+  </script>
+</body>
+</html>
