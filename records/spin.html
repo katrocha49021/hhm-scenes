@@ -16,7 +16,10 @@
     /* sh=1: record lifted off the page with a soft shadow underneath; sh=2 adds a slow float (sneak-peek carousel) */
     .shadow{display:none;position:absolute;left:50%;border-radius:50%;pointer-events:none;
       background:radial-gradient(closest-side,rgba(11,13,72,.55),rgba(11,13,72,.28) 55%,rgba(11,13,72,0));}
-    body.sh .shadow{display:block;}
+    /* sizes come from the frame's own viewport units, so they stay right however Tableau creates, hides or resizes the frame */
+    body.sh{--s:min(100vw,calc(100vh / 1.22));--t:calc((100vh - var(--s) * 1.22) / 2);}
+    body.sh .wrap{width:var(--s);height:var(--s);top:var(--t);transform:translate(-50%,0);}
+    body.sh .shadow{display:block;width:calc(var(--s) * .72);height:calc(var(--s) * .13);top:calc(var(--t) + var(--s) * 1.06);transform:translateX(-50%);}
     body.float .wrap{animation:bob 3.6s ease-in-out infinite;}
     body.float .shadow{animation:breathe 3.6s ease-in-out infinite;}
     @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,calc(var(--s) * -.035));}}
@@ -36,16 +39,7 @@
     var sh=p.get('sh')||(p.get('peek')==='1'?PEEK:null);
     document.body.style.background='#'+bg;
     document.getElementById('rec').src='record_'+v+'_'+c+'.png?v=2';
-    if(sh==='1'||sh==='2'){
-      document.body.classList.add('sh'); if(sh==='2') document.body.classList.add('float');
-      var place=function(){
-        var W=innerWidth,H=innerHeight,s=Math.min(W,H/1.22),top=(H-s*1.22)/2,w=document.getElementById('wrap'),d=document.getElementById('sh');
-        document.body.style.setProperty('--s',s+'px');
-        w.style.width=w.style.height=s+'px'; w.style.top=top+'px'; w.style.transform='translate(-50%,0)';
-        d.style.width=(s*.72)+'px'; d.style.height=(s*.13)+'px'; d.style.top=(top+s*1.06)+'px'; d.style.transform='translateX(-50%)';
-      };
-      place(); addEventListener('resize',place);
-    }
+    if(sh==='1'||sh==='2'){ document.body.classList.add('sh'); if(sh==='2') document.body.classList.add('float'); }
   </script>
 </body>
 </html>
