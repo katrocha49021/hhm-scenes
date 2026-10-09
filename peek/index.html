@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HHM sneak peek</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet" />
+  <style>
+    /* Sneak-peek carousel for the Hispanic Heritage Month quiz (Tableau web object).
+       Everything runs in the browser: one click moves the carousel instantly, no Tableau round trip.
+       URL: ?lang=en|es  &cx=<record centre in px, default middle>  &nh=<name band height px, default 40>  &bg=<hex> */
+    :root{--bg:#3A64D8;--cream:#f4f3dc;--navy:#13127f;--blue:#3a64d8;--cx:50%;--nh:40px;--rw:104px;}
+    html,body{height:100%;margin:0;padding:0;overflow:hidden;background:var(--bg);-webkit-tap-highlight-color:transparent;}
+    body{font-family:"Open Sans",Arial,sans-serif;color:var(--cream);user-select:none;}
+    .row{position:absolute;left:0;right:0;top:0;bottom:var(--nh);}
+    /* record: same look as records/spin.html with peek=1 (shadow + slow float) */
+    .stage{position:absolute;top:0;bottom:0;width:var(--rw);left:calc(var(--cx) - var(--rw) / 2);cursor:default;}
+    .slide{position:absolute;inset:0;opacity:0;transition:opacity .16s ease;pointer-events:none;
+      --s:min(var(--rw),calc(100% / 1.22));}
+    .slide.on{opacity:1;}
+    .slide .wrap{position:absolute;left:50%;width:min(100%,calc((100vh - var(--nh)) / 1.22));aspect-ratio:1;
+      top:calc(((100vh - var(--nh)) - min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * 1.22) / 2);
+      transform:translate(-50%,0);animation:bob 3.6s ease-in-out infinite;}
+    .slide .rec{position:absolute;inset:0;width:100%;height:100%;animation:spin 5s linear infinite;}
+    .slide .sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+      background:conic-gradient(from 300deg,rgba(255,255,255,0) 0deg,rgba(255,255,255,.12) 18deg,rgba(255,255,255,0) 40deg,
+        rgba(255,255,255,0) 180deg,rgba(255,255,255,.08) 198deg,rgba(255,255,255,0) 220deg);
+      -webkit-mask:radial-gradient(circle,transparent 0 23%,#000 24% 100%);mask:radial-gradient(circle,transparent 0 23%,#000 24% 100%);}
+    .slide .shadow{position:absolute;left:50%;border-radius:50%;pointer-events:none;
+      width:calc(min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * .72);height:calc(min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * .13);
+      top:calc(((100vh - var(--nh)) - min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * 1.22) / 2 + min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * 1.06);
+      background:radial-gradient(closest-side,rgba(11,13,72,.55),rgba(11,13,72,.28) 55%,rgba(11,13,72,0));
+      transform:translateX(-50%);animation:breathe 3.6s ease-in-out infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-3.5%);}}
+    @keyframes breathe{0%,100%{transform:translateX(-50%) scale(1);opacity:1;}50%{transform:translateX(-50%) scale(.86);opacity:.75;}}
+    /* arrows: 36px cream rings, 16px from the record, centred on the row */
+    .arr{position:absolute;top:calc(50% - 18px);width:36px;height:36px;box-sizing:border-box;border:1px solid var(--cream);border-radius:50%;
+      background:transparent;color:var(--cream);font:700 17px/1 "Open Sans",Arial,sans-serif;display:flex;align-items:center;justify-content:center;
+      cursor:pointer;padding:0 0 2px;transition:background-color .12s ease,transform .08s ease;outline:none;}
+    .arr:hover{background:rgba(244,243,220,.14);}
+    .arr:active{transform:scale(.92);}
+    .arr:focus-visible{box-shadow:0 0 0 2px var(--navy),0 0 0 4px var(--cream);}
+    .prev{left:calc(var(--cx) - var(--rw) / 2 - 16px - 36px);}
+    .next{left:calc(var(--cx) + var(--rw) / 2 + 16px);}
+    /* name + dots band */
+    .band{position:absolute;left:0;right:0;bottom:0;height:var(--nh);display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding-bottom:5px;box-sizing:border-box;}
+    .band .inner{position:absolute;left:var(--cx);transform:translateX(-50%);text-align:center;white-space:nowrap;}
+    .name{font:700 20px/1.15 Georgia,"Times New Roman",serif;color:var(--cream);}
+    .dots{font:400 12px/1.2 "Open Sans",Arial,sans-serif;color:var(--cream);letter-spacing:.06em;margin-top:2px;}
+    .dots span{cursor:pointer;padding:0 3px;}
+    /* hover card: same content and colours as the old Tableau tooltip */
+    .tip{position:absolute;left:8px;right:8px;top:4px;max-width:380px;margin:0 auto;background:#fff;color:var(--navy);border:1px solid #d6d6d6;
+      border-radius:4px;box-shadow:0 2px 10px rgba(10,12,60,.25);padding:9px 12px 10px;box-sizing:border-box;opacity:0;visibility:hidden;
+      transition:opacity .12s ease,visibility 0s linear .12s;pointer-events:none;z-index:5;}
+    .tip.show{opacity:1;visibility:visible;transition:opacity .12s ease;}
+    .tip .eb{font:700 11px/1.3 "Open Sans",Arial,sans-serif;color:var(--blue);letter-spacing:.02em;}
+    .tip .tn{font:italic 700 20px/1.2 "Open Sans",Arial,sans-serif;margin:1px 0 3px;}
+    .tip .td{font:400 12px/1.35 "Open Sans",Arial,sans-serif;}
+    .tip .ts{font:400 11px/1.35 "Open Sans",Arial,sans-serif;margin-top:4px;}
+    .tip .tc{font:700 11px/1.3 "Open Sans",Arial,sans-serif;color:var(--blue);margin-top:7px;}
+    @media (prefers-reduced-motion:reduce){.slide .rec{animation-duration:24s;} .slide .wrap,.slide .shadow{animation:none;} .slide{transition:none;}}
+  </style>
+</head>
+<body>
+  <div class="row">
+    <button class="arr prev" id="prev" type="button" aria-label="Previous playlist">&larr;</button>
+    <div class="stage" id="stage" aria-live="polite"></div>
+    <button class="arr next" id="next" type="button" aria-label="Next playlist">&rarr;</button>
+  </div>
+  <div class="band"><div class="inner"><div class="name" id="name"></div><div class="dots" id="dots"></div></div></div>
+  <div class="tip" id="tip" role="tooltip"><div class="eb" id="t-eb"></div><div class="tn" id="t-n"></div><div class="td" id="t-d"></div><div class="ts" id="t-s"></div><div class="tc" id="t-c"></div></div>
+  <script>
+    var P = [
+      {c:'CV', en:'Old Soul',       es:'Corazón Viejo',    n:38, dur:'2h 11m', topEn:'Mexico',      topEs:'México',
+       dEn:'Sound profile: think rhythmic beats meets bolero heartache & bossa nova sweetness',
+       dEs:'Perfil sonoro: imagina ritmos marcados, el desamor del bolero y la dulzura de la bossa nova'},
+      {c:'LT', en:'Tropical Light', es:'Luz Tropical',     n:34, dur:'1h 54m', topEn:'Brazil',      topEs:'Brasil',
+       dEn:'Sound profile: think quick samba drums meets laid-back reggae grooves',
+       dEs:'Perfil sonoro: imagina tambores rápidos de samba y el ritmo relajado del reggae'},
+      {c:'MS', en:'Soft Melodies',  es:'Melodías Suaves',  n:49, dur:'2h 45m', topEn:'Mexico',      topEs:'México',
+       dEn:'Sound profile: think melancholic melodies meets soft vocals meets acoustic guitars',
+       dEs:'Perfil sonoro: imagina melodías melancólicas, voces suaves y guitarras acústicas'},
+      {c:'MN', en:'After Midnight', es:'Medianoche',       n:39, dur:'2h 17m', topEn:'Puerto Rico', topEs:'Puerto Rico',
+       dEn:'Sound profile: think Bad Bunny meets perreo meets trap latino',
+       dEs:'Perfil sonoro: imagina a Bad Bunny con perreo y trap latino'},
+      {c:'GR', en:'Rock Your Way',  es:'Rock a Tu Manera', n:37, dur:'2h 18m', topEn:'Argentina',   topEs:'Argentina',
+       dEn:'Sound profile: think electric guitars meets rock en español classics',
+       dEs:'Perfil sonoro: imagina guitarras eléctricas y clásicos del rock en español'}
+    ];
+    var q = new URLSearchParams(location.search), es = q.get('lang') === 'es', R = document.documentElement.style;
+    var cx = parseFloat(q.get('cx')), nh = parseFloat(q.get('nh')), bg = (q.get('bg') || '').replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
+    if (cx > 0) R.setProperty('--cx', cx + 'px');
+    if (nh > 0) R.setProperty('--nh', nh + 'px');
+    if (bg) R.setProperty('--bg', '#' + bg);
+    document.documentElement.lang = es ? 'es' : 'en';
+    document.getElementById('prev').setAttribute('aria-label', es ? 'Playlist anterior' : 'Previous playlist');
+    document.getElementById('next').setAttribute('aria-label', es ? 'Siguiente playlist' : 'Next playlist');
+    var stage = document.getElementById('stage');
+    P.forEach(function (p) {                       // all five records load up front, so switching never waits on the network
+      var s = document.createElement('div'); s.className = 'slide';
+      s.innerHTML = '<div class="shadow"></div><div class="wrap"><img class="rec" alt="" src="../records/record_title_' + p.c + '.png?v=2" /><div class="sheen"></div></div>';
+      stage.appendChild(s); p.el = s;
+    });
+    var i = 0, tip = document.getElementById('tip');
+    function dots(k) { return P.map(function (_, j) { return '<span data-j="' + j + '">' + (j === k ? '●' : '○') + '</span>'; }).join('  '); }
+    function show(k) {
+      i = (k + P.length) % P.length; var p = P[i];
+      P.forEach(function (x, j) { x.el.classList.toggle('on', j === i); });
+      document.getElementById('name').textContent = es ? p.es : p.en;
+      document.getElementById('dots').innerHTML = dots(i);
+      document.getElementById('t-eb').textContent = (es ? 'VISTAZO · ' : 'SNEAK PEEK · ') + (i + 1) + (es ? ' DE 5' : ' OF 5');
+      document.getElementById('t-n').textContent = es ? p.es : p.en;
+      document.getElementById('t-d').textContent = es ? p.dEs : p.dEn;
+      document.getElementById('t-s').textContent = p.n + (es ? ' canciones · ' : ' songs · ') + p.dur + (es ? ' · sobre todo de ' : ' · mostly from ') + (es ? p.topEs : p.topEn);
+      document.getElementById('t-c').textContent = es ? 'Haz el quiz para ver si es la tuya  →' : 'Take the quiz to see if it’s yours  →';
+    }
+    document.getElementById('prev').addEventListener('click', function () { show(i - 1); });
+    document.getElementById('next').addEventListener('click', function () { show(i + 1); });
+    document.getElementById('dots').addEventListener('click', function (e) { var j = e.target.getAttribute('data-j'); if (j !== null) show(+j); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'ArrowLeft') show(i - 1); if (e.key === 'ArrowRight') show(i + 1); });
+    // hover card on the record (tap to toggle on touch screens)
+    var hideT;
+    function tipOn() { clearTimeout(hideT); tip.classList.add('show'); }
+    function tipOff() { hideT = setTimeout(function () { tip.classList.remove('show'); }, 80); }
+    stage.addEventListener('mouseenter', tipOn); stage.addEventListener('mouseleave', tipOff);
+    stage.addEventListener('touchstart', function (e) { e.preventDefault(); tip.classList.toggle('show'); }, {passive: false});
+    document.addEventListener('touchstart', function (e) { if (!stage.contains(e.target)) tip.classList.remove('show'); });
+    show(0);
+  </script>
+</body>
+</html>
