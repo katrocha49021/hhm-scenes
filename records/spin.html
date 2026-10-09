@@ -13,18 +13,39 @@
         rgba(255,255,255,0) 180deg,rgba(255,255,255,.08) 198deg,rgba(255,255,255,0) 220deg);
       -webkit-mask:radial-gradient(circle,transparent 0 23%,#000 24% 100%);mask:radial-gradient(circle,transparent 0 23%,#000 24% 100%);}
     @keyframes spin{to{transform:rotate(360deg);}}
-    @media (prefers-reduced-motion:reduce){.rec{animation-duration:24s;}}
+    /* sh=1: record lifted off the page with a soft shadow underneath; sh=2 adds a slow float (sneak-peek carousel) */
+    .shadow{display:none;position:absolute;left:50%;border-radius:50%;pointer-events:none;
+      background:radial-gradient(closest-side,rgba(11,13,72,.55),rgba(11,13,72,.28) 55%,rgba(11,13,72,0));}
+    body.sh .shadow{display:block;}
+    body.float .wrap{animation:bob 3.6s ease-in-out infinite;}
+    body.float .shadow{animation:breathe 3.6s ease-in-out infinite;}
+    @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,calc(var(--s) * -.035));}}
+    @keyframes breathe{0%,100%{transform:translateX(-50%) scale(1);opacity:1;}50%{transform:translateX(-50%) scale(.86);opacity:.75;}}
+    @media (prefers-reduced-motion:reduce){.rec{animation-duration:24s;} body.float .wrap,body.float .shadow{animation:none;}}
   </style>
 </head>
 <body>
-  <div class="wrap"><img class="rec" id="rec" alt="" /><div class="sheen"></div></div>
+  <div class="shadow" id="sh"></div>
+  <div class="wrap" id="wrap"><img class="rec" id="rec" alt="" /><div class="sheen"></div></div>
   <script>
     var p=new URLSearchParams(location.search);
     var c=(p.get('c')||'CV').replace(/[^A-Z]/g,'').slice(0,2);
     var v=p.get('v')==='next'?'upnext':'title';
     var bg=(p.get('bg')||'3A64D8').replace(/[^0-9A-Fa-f]/g,'').slice(0,6);
+    var PEEK='2';                                   /* sneak-peek carousel look: '0' none, '1' shadow, '2' shadow + float */
+    var sh=p.get('sh')||(p.get('peek')==='1'?PEEK:null);
     document.body.style.background='#'+bg;
     document.getElementById('rec').src='record_'+v+'_'+c+'.png?v=2';
+    if(sh==='1'||sh==='2'){
+      document.body.classList.add('sh'); if(sh==='2') document.body.classList.add('float');
+      var place=function(){
+        var W=innerWidth,H=innerHeight,s=Math.min(W,H/1.22),top=(H-s*1.22)/2,w=document.getElementById('wrap'),d=document.getElementById('sh');
+        document.body.style.setProperty('--s',s+'px');
+        w.style.width=w.style.height=s+'px'; w.style.top=top+'px'; w.style.transform='translate(-50%,0)';
+        d.style.width=(s*.72)+'px'; d.style.height=(s*.13)+'px'; d.style.top=(top+s*1.06)+'px'; d.style.transform='translateX(-50%)';
+      };
+      place(); addEventListener('resize',place);
+    }
   </script>
 </body>
 </html>
