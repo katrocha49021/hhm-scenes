@@ -9,7 +9,8 @@
   <style>
     /* Sneak-peek carousel for the Hispanic Heritage Month quiz (Tableau web object).
        Everything runs in the browser: one click moves the carousel instantly, no Tableau round trip.
-       URL: ?lang=en|es  &cx=<record centre in px, default middle>  &nh=<name band height px, default 40>  &bg=<hex> */
+       URL: ?lang=en|es  &cx=<record centre in px, default middle>  &nh=<name band height px, default 40>  &bg=<hex>
+       The record never crosses the top edge at the top of its float (it did on the 151px phone frame, Oct 13). */
     :root{--bg:#3A64D8;--cream:#f4f3dc;--navy:#13127f;--blue:#3a64d8;--cx:50%;--nh:40px;--rw:104px;}
     html,body{height:100%;margin:0;padding:0;overflow:hidden;background:var(--bg);-webkit-tap-highlight-color:transparent;}
     body{font-family:"Open Sans",Arial,sans-serif;color:var(--cream);user-select:none;}
@@ -17,10 +18,12 @@
     /* record: same look as records/spin.html with peek=1 (shadow + slow float) */
     .stage{position:absolute;top:0;bottom:0;width:var(--rw);left:calc(var(--cx) - var(--rw) / 2);cursor:default;}
     .slide{position:absolute;inset:0;opacity:0;transition:opacity .16s ease;pointer-events:none;
-      --s:min(var(--rw),calc(100% / 1.22));}
+      /* frame height comes from JS (--h); record size and top keep the record, its 3.5% float and its shadow inside the frame */
+      --a:calc(var(--h,100vh) - var(--nh));
+      --sz:min(var(--rw),calc((var(--a) - 2px) / 1.26));
+      --top:max(calc((var(--a) - var(--sz) * 1.22) / 2),calc(var(--sz) * .035 + 2px));}
     .slide.on{opacity:1;}
-    .slide .wrap{position:absolute;left:50%;width:min(100%,calc((100vh - var(--nh)) / 1.22));aspect-ratio:1;
-      top:calc(((100vh - var(--nh)) - min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * 1.22) / 2);
+    .slide .wrap{position:absolute;left:50%;width:var(--sz);aspect-ratio:1;top:var(--top);
       transform:translate(-50%,0);animation:bob 3.6s ease-in-out infinite;}
     .slide .rec{position:absolute;inset:0;width:100%;height:100%;animation:spin 5s linear infinite;}
     .slide .sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;
@@ -28,8 +31,7 @@
         rgba(255,255,255,0) 180deg,rgba(255,255,255,.08) 198deg,rgba(255,255,255,0) 220deg);
       -webkit-mask:radial-gradient(circle,transparent 0 23%,#000 24% 100%);mask:radial-gradient(circle,transparent 0 23%,#000 24% 100%);}
     .slide .shadow{position:absolute;left:50%;border-radius:50%;pointer-events:none;
-      width:calc(min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * .72);height:calc(min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * .13);
-      top:calc(((100vh - var(--nh)) - min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * 1.22) / 2 + min(var(--rw),calc((100vh - var(--nh)) / 1.22)) * 1.06);
+      width:calc(var(--sz) * .72);height:calc(var(--sz) * .13);top:calc(var(--top) + var(--sz) * 1.06);
       background:radial-gradient(closest-side,rgba(11,13,72,.55),rgba(11,13,72,.28) 55%,rgba(11,13,72,0));
       transform:translateX(-50%);animation:breathe 3.6s ease-in-out infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
@@ -91,6 +93,10 @@
        dEs:'Perfil sonoro: imagina guitarras eléctricas y clásicos del rock en español'}
     ];
     var q = new URLSearchParams(location.search), es = q.get('lang') === 'es', R = document.documentElement.style;
+    // size from the frame itself (iPhone Safari has misreported vh inside Tableau web objects); keep the last good height
+    function fit() { var h = document.documentElement.clientHeight || window.innerHeight; if (h > 0) R.setProperty('--h', h + 'px'); }
+    fit(); window.addEventListener('resize', fit);
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(document.documentElement);
     var cx = parseFloat(q.get('cx')), nh = parseFloat(q.get('nh')), bg = (q.get('bg') || '').replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
     if (cx > 0) R.setProperty('--cx', cx + 'px');
     if (nh > 0) R.setProperty('--nh', nh + 'px');
