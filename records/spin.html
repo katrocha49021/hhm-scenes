@@ -6,7 +6,10 @@
   <title>HHM record</title>
   <style>
     html,body{height:100%;margin:0;padding:0;overflow:hidden;background:#3A64D8;}
-    .wrap{position:absolute;left:50%;top:50%;width:100vmin;height:100vmin;transform:translate(-50%,-50%);}
+    /* sizes come from the frame's own box (container units, plus px from a ResizeObserver), never viewport units: iPhone Safari
+       left vw/vh at 0 in frames Tableau creates hidden at 0x0 and shows later, so the result-page records stayed blank */
+    .stage{position:absolute;inset:0;container-type:size;--s:min(100cqw,100cqh);--t:calc((100cqh - var(--s)) / 2);}
+    .wrap{position:absolute;left:50%;top:var(--t);width:var(--s);height:var(--s);transform:translate(-50%,0);}
     .rec{position:absolute;inset:0;width:100%;height:100%;animation:spin 5s linear infinite;}
     .sheen{position:absolute;inset:0;border-radius:50%;pointer-events:none;
       background:conic-gradient(from 300deg,rgba(255,255,255,0) 0deg,rgba(255,255,255,.12) 18deg,rgba(255,255,255,0) 40deg,
@@ -16,9 +19,7 @@
     /* sh=1: record lifted off the page with a soft shadow underneath; sh=2 adds a slow float (sneak-peek carousel) */
     .shadow{display:none;position:absolute;left:50%;border-radius:50%;pointer-events:none;
       background:radial-gradient(closest-side,rgba(11,13,72,.55),rgba(11,13,72,.28) 55%,rgba(11,13,72,0));}
-    /* sizes come from the frame's own viewport units, so they stay right however Tableau creates, hides or resizes the frame */
-    body.sh{--s:min(100vw,calc(100vh / 1.22));--t:calc((100vh - var(--s) * 1.22) / 2);}
-    body.sh .wrap{width:var(--s);height:var(--s);top:var(--t);transform:translate(-50%,0);}
+    body.sh .stage{--s:min(100cqw,calc(100cqh / 1.22));--t:calc((100cqh - var(--s) * 1.22) / 2);}
     body.sh .shadow{display:block;width:calc(var(--s) * .72);height:calc(var(--s) * .13);top:calc(var(--t) + var(--s) * 1.06);transform:translateX(-50%);}
     body.float .wrap{animation:bob 3.6s ease-in-out infinite;}
     body.float .shadow{animation:breathe 3.6s ease-in-out infinite;}
@@ -28,8 +29,10 @@
   </style>
 </head>
 <body>
-  <div class="shadow" id="sh"></div>
-  <div class="wrap" id="wrap"><img class="rec" id="rec" alt="" /><div class="sheen"></div></div>
+  <div class="stage" id="stage">
+    <div class="shadow" id="sh"></div>
+    <div class="wrap" id="wrap"><img class="rec" id="rec" alt="" /><div class="sheen"></div></div>
+  </div>
   <script>
     var p=new URLSearchParams(location.search);
     var c=(p.get('c')||'CV').replace(/[^A-Z]/g,'').slice(0,2);
@@ -40,6 +43,13 @@
     document.body.style.background='#'+bg;
     document.getElementById('rec').src='record_'+v+'_'+c+'.png?v=2';
     if(sh==='1'||sh==='2'){ document.body.classList.add('sh'); if(sh==='2') document.body.classList.add('float'); }
+    /* re-measure whenever the frame changes size (Tableau shows result records by growing a 0x0 frame) */
+    var st=document.getElementById('stage'), k=(sh==='1'||sh==='2')?1.22:1;
+    function fit(){ var w=st.clientWidth, h=st.clientHeight;
+      if(!w||!h){ st.style.removeProperty('--s'); st.style.removeProperty('--t'); return; }
+      var size=Math.min(w,h/k); st.style.setProperty('--s',size+'px'); st.style.setProperty('--t',((h-size*k)/2)+'px'); }
+    if(window.ResizeObserver) new ResizeObserver(fit).observe(st);
+    window.addEventListener('resize',fit); fit();
   </script>
 </body>
 </html>
